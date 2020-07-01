@@ -7,11 +7,10 @@ import android.database.sqlite.SQLiteDatabase;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Formatter;
 import java.util.List;
 
 import static android.content.Context.MODE_PRIVATE;
@@ -63,14 +62,11 @@ class TasksRepository implements Closeable {
                 long last = cursor.getLong(3);
 
                 long expiringTimeSeconds = last + interval;
-                long seconds = expiringTimeSeconds % 60L;
-                long minutes = expiringTimeSeconds % (60L*60L) / 60L;
-                long hours = expiringTimeSeconds % (24L*60L*60L) / (60L*60L) + 3L; // FIXME
-                hours = hours % 24L;
-
-                String expiringTimeString = String.format("%02d", hours) + ":" +
-                                            String.format("%02d", minutes) + ":" +
-                                            String.format("%02d", seconds);
+                Date date = new Date(expiringTimeSeconds * 1000);
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(date);
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+                String expiringTimeString = dateFormat.format(date);
 
                 long currentTime = System.currentTimeMillis() / 1000;
                 boolean expired = currentTime > last + interval;
