@@ -1,9 +1,14 @@
 package com.antipipison.tasks;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -24,39 +29,44 @@ public class MainActivity extends AppCompatActivity {
 
     private TasksRepository _tasksRepository; // for tasks retrieving
     private Handler _handler; // for repeated action
+    private NotificationManagerCompat _notificationManager;
 
     @Override
     /**
      * Initialization
      */
     protected void onCreate(Bundle savedInstanceState) {
+
+        // UI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        // data
         _tasksRepository = new TasksRepository(this);
 
-
-//        final Handler mHandler;
-//        final long startTime;
-//
-//        startTime = System.currentTimeMillis();
-//        mHandler = new Handler(){
-//            public void handleMessage(Message msg){
-//                super.handleMessage(msg);
-//
-//                long seconds = ((System.currentTimeMillis() - startTime)) / 1000;
-//                Log.i("info", "seconds = " + seconds);
-//
-//                this.sendEmptyMessageDelayed(0, 1000);
-//            }
-//        };
-//
-//        mHandler.sendEmptyMessage(0);
+        // repeated task
         _handler = new Handler();
-        // _handler.postDelayed(timeUpdaterRunnable, 100);
         _handler.post(timeUpdaterRunnable);
+
+        // notifications
+        createNotificationChannel();
+        _notificationManager = NotificationManagerCompat.from(this);
+    }
+
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel("ass","name",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("decription");
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
     }
 
     private Runnable timeUpdaterRunnable = new Runnable() {
@@ -146,6 +156,17 @@ public class MainActivity extends AppCompatActivity {
             textView.setVisibility(View.VISIBLE);
         } else {
             textView.setVisibility(View.GONE);
+        }
+
+        // show notification for each expired task
+
+        for (Task task : expiredTasks) {
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "ass")
+                    .setSmallIcon(R.drawable.ic_add_circle_outline_white_24dp)
+                    .setContentTitle("Task expired")
+                    .setContentText(task.name)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+            _notificationManager.notify(task.name.hashCode(), builder.build());
         }
     }
 
